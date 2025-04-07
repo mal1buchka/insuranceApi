@@ -1,18 +1,24 @@
 package com.kadyraliev.insuranceapi.service;
 
 import com.kadyraliev.insuranceapi.clients.InsuranceClient;
+import com.kadyraliev.insuranceapi.enums.Type;
 import com.kadyraliev.insuranceapi.model.Insurance;
 import com.kadyraliev.insuranceapi.repository.InsuranceRepository;
 import com.kadyraliev.insuranceapi.rest.request.InsuranceCreateRequest;
 import com.kadyraliev.insuranceapi.rest.request.InsurancePatchRequest;
+import com.kadyraliev.insuranceapi.rest.response.ErrorResponse;
+import com.kadyraliev.insuranceapi.rest.response.InsuranceCreateResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsurancePatchResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsuranceGetResponse;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+
 
 @Slf4j
 @Service
@@ -28,7 +34,7 @@ public class InsuranceService {
 
     public List<InsuranceGetResponse> listInsurance(Integer take,
                                                     Integer skip,
-                                                    String insuranceType,
+                                                    Type insuranceType,
                                                     String order,
                                                     String orderType,
                                                     LocalDateTime dateFrom,
@@ -37,15 +43,31 @@ public class InsuranceService {
         return insuranceClient.listInsurance(take, skip, insuranceType, order, orderType, dateFrom, dateTo);
     }
 
-    public InsuranceGetResponse createInsurance(InsuranceCreateRequest request) {
-        InsuranceGetResponse response = insuranceClient.createInsurance(request);
-        Insurance insurance = new Insurance();
-        insurance.setContentFromBase64(response.getFile());
-        insuranceRepository.save(insurance);
-        return response;
+    public InsuranceCreateResponse createInsurance(InsuranceCreateRequest request) {
+        try {
+            InsuranceCreateResponse response = insuranceClient.createInsurance(request);
+            log.info("{}", response);
+//            if (request.getDetail() != null) {
+//                throw new
+//            }
+            Insurance insurance = Insurance.fromRequest(response);
+            insuranceRepository.save(insurance);
+            return response;
+        } catch (FeignException.FeignClientException ex) {
+            log.error(ex.getMessage());
+            throw new RuntimeException(ex.getMessage());
+        }
+
     }
 
     public InsurancePatchResponse patchInsurance(String id, InsurancePatchRequest request) {
         return insuranceClient.patchInsurance(id, request);
+    }
+
+    public String viewInsuranceFile(UUID id) {
+        Insurance insurance = insuranceRepository.findById(id).orElseThrow(
+                () -> new RuntimeException("Could not find insurance with id " + id)
+        );
+        return insurance.getContentAsBase64();
     }
 }

@@ -23,7 +23,6 @@ public class InsuranceCreateRequest {
     )
     @JsonProperty("contract_number")
     @NotEmpty(message = "contract number не должно быть пустым или null")
-    @Pattern(regexp = "^//d+$", message = "contract number должен состоять только из цифр или набора цифр")
     private String contractNumber;
 
     @Schema(

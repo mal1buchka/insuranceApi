@@ -10,8 +10,7 @@ import lombok.Setter;
 @Setter
 public class InsurancePatchRequest {
 
-    @NotEmpty
-    @Pattern(regexp = "PAID")
+    @Pattern(regexp = "^(PAID)$", message = "Полe 'status' не PAID")
     private String status;
 
     @NotEmpty

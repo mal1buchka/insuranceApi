@@ -1,7 +1,9 @@
 package com.kadyraliev.insuranceapi.controller;
 
+import com.kadyraliev.insuranceapi.enums.Type;
 import com.kadyraliev.insuranceapi.rest.request.InsuranceCreateRequest;
 import com.kadyraliev.insuranceapi.rest.request.InsurancePatchRequest;
+import com.kadyraliev.insuranceapi.rest.response.InsuranceCreateResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsurancePatchResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsuranceGetResponse;
 import com.kadyraliev.insuranceapi.service.InsuranceService;
@@ -10,9 +12,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Validated
 @RestController
@@ -121,24 +124,30 @@ public class InsuranceController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<InsuranceGetResponse> listInsurance(
+
             @RequestParam(name = "take", defaultValue = "10", required = false)
-            Integer take,
+            @Min(value = 1, message = "Минимальное значение для выборки take: 1") Integer take,
+
             @RequestParam(name = "skip", defaultValue = "0", required = false)
-            Integer skip,
+            @Min(value = 1, message = "Минимальное значение для выборки skip: 1") Integer skip,
+
             @RequestParam(name = "insurance_type", required = false)
-            String insuranceType,
+            @Pattern(regexp = "^(REFINANCING|DDU|FIRST_PAYMENT)$",
+                    message = "Поле может быть REFINANCING или DDU или FIRST_PAYMENT") Type insuranceType,
+
             @RequestParam(name = "order", required = false)
-            @Pattern(regexp = "created_at|updated_at|policy_number", message = "Invalid order value")
-            String order,
+            @Pattern(regexp = "^(created_at|updated_at|policy_number)$",
+                    message = "Поле order может быть только create_at или updated_at или policy_number") String order,
+
             @RequestParam(name = "order_type", required = false)
-            @Pattern(regexp = "ASC|DESC", message = "Invalid order type")
-            String orderType,
+            @Pattern(regexp = "^(ASC|DESC)$",
+                    message = "Поле order_type может быть только ASC или DESC") String orderType,
+
             @RequestParam(name = "date_from", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime dateFrom,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateFrom,
+
             @RequestParam(name = "date_to", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime dateTo
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTo
     ) {
         return insuranceService.listInsurance(take, skip, insuranceType, order, orderType, dateFrom, dateTo);
     }
@@ -157,7 +166,7 @@ public class InsuranceController {
             responseCode = "400",
             description = "Невалидные данные (например, отрицательная страховая сумма)"
     )
-    public InsuranceGetResponse createInsurance(@RequestBody @Valid InsuranceCreateRequest request) {
+    public InsuranceCreateResponse createInsurance(@RequestBody @Valid InsuranceCreateRequest request) {
         return insuranceService.createInsurance(request);
     }
 
@@ -167,5 +176,9 @@ public class InsuranceController {
         return insuranceService.patchInsurance(policyUuid, request);
     }
 
-
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/view-insurance/{policyUuid}")
+    public String viewInsurance(@PathVariable UUID policyUuid) {
+        return insuranceService.viewInsuranceFile(policyUuid);
+    }
 }
