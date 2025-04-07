@@ -7,6 +7,7 @@ import com.kadyraliev.insuranceapi.enums.Type;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Schema(description = "Ответ на создание страхового полиса")
 @Getter
 @Setter
+@ToString
 public class InsuranceCreateResponse {
 
     private UUID id;
@@ -42,4 +44,6 @@ public class InsuranceCreateResponse {
     private Type type;
 
     private String file;
+
+    private ErrorResponse error;
 }

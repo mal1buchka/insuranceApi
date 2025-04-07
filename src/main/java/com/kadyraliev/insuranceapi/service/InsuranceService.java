@@ -1,5 +1,6 @@
 package com.kadyraliev.insuranceapi.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kadyraliev.insuranceapi.clients.InsuranceClient;
 import com.kadyraliev.insuranceapi.enums.Type;
 import com.kadyraliev.insuranceapi.model.Insurance;
@@ -27,6 +28,7 @@ public class InsuranceService {
 
     private final InsuranceClient insuranceClient;
     private final InsuranceRepository insuranceRepository;
+    private final ObjectMapper objectMapper;
 
     public InsuranceGetResponse getInsurance(String policyUuid) {
         return insuranceClient.getInsurance(policyUuid);
@@ -44,20 +46,15 @@ public class InsuranceService {
     }
 
     public InsuranceCreateResponse createInsurance(InsuranceCreateRequest request) {
-        try {
-            InsuranceCreateResponse response = insuranceClient.createInsurance(request);
-            log.info("{}", response);
-//            if (request.getDetail() != null) {
-//                throw new
-//            }
-            Insurance insurance = Insurance.fromRequest(response);
-            insuranceRepository.save(insurance);
-            return response;
-        } catch (FeignException.FeignClientException ex) {
-            log.error(ex.getMessage());
-            throw new RuntimeException(ex.getMessage());
-        }
+        InsuranceCreateResponse response = insuranceClient.createInsurance(request);
 
+        // Обработка бизнес-логики, если response вернулся успешно
+        // Например, проверка, что статус = SUCCESS (если ты его прокидываешь)
+        // или просто работа с пришедшими полями
+        Insurance insurance = Insurance.fromRequest(response);
+        insuranceRepository.save(insurance);
+
+        return response;
     }
 
     public InsurancePatchResponse patchInsurance(String id, InsurancePatchRequest request) {

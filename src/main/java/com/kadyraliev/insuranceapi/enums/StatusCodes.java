@@ -8,8 +8,8 @@ import lombok.Getter;
 public enum StatusCodes {
     SUCCESS(0, "Успех"),
     UNKNOWN_ERROR(-1, "Неопознанная ошибка"),
-    NOT_VALID_INPUT_DATA(2, "Неправильно введены данные для запроса");
-
+    NOT_VALID_INPUT_DATA(2, "Неправильно введены данные для запроса"),
+    FEIGN_ERROR(3, "Ошибка с внешним сервисом");
 
     private final Integer status;
     private final String message;

@@ -38,7 +38,7 @@ public class InsuranceCreateRequest {
             example = "1",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
-    @Positive(message = "страховая сумма должна быть всегда положительной")
+//    @Positive(message = "страховая сумма должна быть всегда положительной")
     @JsonProperty("insurance_amount")
     private BigDecimal insuranceAmount;
 
