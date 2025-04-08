@@ -1,13 +1,11 @@
 package com.kadyraliev.insuranceapi.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kadyraliev.insuranceapi.clients.InsuranceClient;
 import com.kadyraliev.insuranceapi.enums.Type;
 import com.kadyraliev.insuranceapi.model.Insurance;
 import com.kadyraliev.insuranceapi.repository.InsuranceRepository;
 import com.kadyraliev.insuranceapi.rest.request.InsuranceCreateRequest;
 import com.kadyraliev.insuranceapi.rest.request.InsurancePatchRequest;
-import com.kadyraliev.insuranceapi.rest.response.ErrorResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsuranceCreateResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsurancePatchResponse;
 import com.kadyraliev.insuranceapi.rest.response.InsuranceGetResponse;
@@ -20,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static com.kadyraliev.insuranceapi.controller.advice.util.FeignHandler.handleFeignException;
+
 
 @Slf4j
 @Service
@@ -28,7 +28,6 @@ public class InsuranceService {
 
     private final InsuranceClient insuranceClient;
     private final InsuranceRepository insuranceRepository;
-    private final ObjectMapper objectMapper;
 
     public InsuranceGetResponse getInsurance(String policyUuid) {
         return insuranceClient.getInsurance(policyUuid);
@@ -46,15 +45,14 @@ public class InsuranceService {
     }
 
     public InsuranceCreateResponse createInsurance(InsuranceCreateRequest request) {
-        InsuranceCreateResponse response = insuranceClient.createInsurance(request);
-
-        // Обработка бизнес-логики, если response вернулся успешно
-        // Например, проверка, что статус = SUCCESS (если ты его прокидываешь)
-        // или просто работа с пришедшими полями
-        Insurance insurance = Insurance.fromRequest(response);
-        insuranceRepository.save(insurance);
-
-        return response;
+        try {
+            InsuranceCreateResponse response = insuranceClient.createInsurance(request);
+            Insurance insurance = Insurance.fromRequest(response);
+            insuranceRepository.save(insurance);
+            return response;
+        }catch (FeignException e){
+            throw handleFeignException(e, null);
+        }
     }
 
     public InsurancePatchResponse patchInsurance(String id, InsurancePatchRequest request) {

@@ -1,82 +1,61 @@
 package com.kadyraliev.insuranceapi.controller.advice;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kadyraliev.insuranceapi.enums.StatusCodes;
+import com.kadyraliev.insuranceapi.exceptions.BadRequestException;
 import com.kadyraliev.insuranceapi.rest.response.BaseResponse;
-import com.kadyraliev.insuranceapi.rest.response.ErrorDetail;
-import com.kadyraliev.insuranceapi.rest.response.ErrorResponse;
 import feign.FeignException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.List;
 
 @Slf4j
 @RestControllerAdvice
-@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-    private final ObjectMapper objectMapper;
+    @ExceptionHandler(FeignException.InternalServerError.class)
+    public ResponseEntity<BaseResponse> handleFeignInternalServerException(FeignException ex) {
 
-    @ExceptionHandler(FeignException.class)
-    public ResponseEntity<BaseResponse> handleFeignException(FeignException ex) {
-        log.error("Feign exception -> {}", ex.contentUTF8(), ex);
-        String content = ex.contentUTF8();
+        log.error("Feign exception: Internal Server Error -> {}", ex.getMessage(), ex);
 
-        try {
-            BaseResponse baseResponse = new BaseResponse();
-            baseResponse.setStatusCode(StatusCodes.NOT_VALID_INPUT_DATA);
+        BaseResponse baseResponse = BaseResponse.builder()
+                .code(StatusCodes.UNKNOWN_ERROR.getStatus())
+                .message(StatusCodes.UNKNOWN_ERROR.getMessage())
+                .build();
 
-            JsonNode root = objectMapper.readTree(content);
-            JsonNode detailNode = root.get("detail");
+        return ResponseEntity
+                .status(ex.status())
+                .body(baseResponse);
+    }
 
-            if (detailNode != null) {
-                ErrorResponse errorResponse = new ErrorResponse();
+    @ExceptionHandler(FeignException.Forbidden.class)
+    public ResponseEntity<BaseResponse> handleForbiddenException(FeignException.Forbidden ex) {
+        log.error("Feign exception: Forbidden -> {}", ex.getMessage());
 
-                if (detailNode.isArray()) {
-                    errorResponse = objectMapper.treeToValue(root, ErrorResponse.class);
-                } else {
-                    ErrorDetail detail = ErrorDetail.builder()
-                            .msg(detailNode.asText())
-                            .build();
+        BaseResponse baseResponse = BaseResponse.builder()
+                .code(StatusCodes.INVALID_TOKEN.getStatus())
+                .message(StatusCodes.INVALID_TOKEN.getMessage())
+                .build();
 
-                    errorResponse.setDetail(List.of(detail));
-                }
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(baseResponse);
+    }
 
-                baseResponse.setError(errorResponse);
-            } else {
-                // нет detail — можно создать стандартную ошибку
-                ErrorDetail detail = ErrorDetail.builder()
-                        .type("missing_detail")
-                        .msg("Поле detail отсутствует в ответе")
-                        .loc(List.of())
-                        .build();
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<BaseResponse> handleBadRequestException(BadRequestException ex) {
+        log.error("Bad request exception -> {}", ex.getMessage());
 
-                ErrorResponse errorResponse = new ErrorResponse();
-                errorResponse.setDetail(List.of(detail));
-                baseResponse.setError(errorResponse);
-            }
+        BaseResponse baseResponse = BaseResponse.builder()
+                .code(ex.getCode())
+                .message(ex.getMessage())
+                .build();
 
-            return ResponseEntity
-                    .status(ex.status())
-                    .body(baseResponse);
-
-        } catch (Exception e) {
-            log.error("Ошибка при разборе FeignException", e);
-
-            BaseResponse fallbackResponse = new BaseResponse();
-            fallbackResponse.setStatusCode(StatusCodes.UNKNOWN_ERROR);
-            fallbackResponse.setMessage("Ошибка при разборе ошибки внешнего сервиса");
-
-            return ResponseEntity
-                    .status(HttpStatus.BAD_GATEWAY)
-                    .body(fallbackResponse);
-        }
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(baseResponse);
     }
 
 

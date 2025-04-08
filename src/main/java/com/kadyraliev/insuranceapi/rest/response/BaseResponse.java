@@ -1,20 +1,14 @@
 package com.kadyraliev.insuranceapi.rest.response;
 
-import com.kadyraliev.insuranceapi.enums.StatusCodes;
+
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Builder
 public class BaseResponse {
-    private StatusCodes statusCode;
-    private Integer code;
+    private int code;
     private String message;
-    private ErrorResponse error;
-
-    public void setStatusCode(StatusCodes statusCode) {
-        this.statusCode = statusCode;
-        this.message = statusCode.getMessage();
-        this.code = statusCode.getStatus();
-    }
 }
