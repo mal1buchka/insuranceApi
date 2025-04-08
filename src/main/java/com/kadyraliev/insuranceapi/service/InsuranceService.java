@@ -29,6 +29,7 @@ public class InsuranceService {
     private final InsuranceClient insuranceClient;
     private final InsuranceRepository insuranceRepository;
 
+
     public InsuranceGetResponse getInsurance(String policyUuid) {
         return insuranceClient.getInsurance(policyUuid);
     }
